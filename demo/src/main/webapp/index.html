@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Spring Boot Person Service</title>
+
+    <link rel="stylesheet" type="text/css" href="stylesheet.css" media="screen" />
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script type="text/javascript">
+      var app = angular.module("PersonManagement", []);
+      angular.module('PersonManagement').constant('SERVER_URL','/persons');
+
+      //Controller Part
+      app.controller("PersonManagementController",  function ($scope, $http, SERVER_URL) {
+        //Initialize page with default data which is blank in this example
+        $scope.Persons = [];
+        $scope.form = {
+          id: -1,
+          firstname: "",
+          lastname: ""
+        };
+        //Now load the data from server
+        _refreshPageData();
+        //HTTP POST/PUT methods for add/edit Persons
+        $scope.update = function () {
+          var method = "";
+          var url = "";
+          var data = {};
+          if ($scope.form.id == -1) {
+            //Id is absent so add Persons - POST operation
+            method = "POST";
+            url = SERVER_URL;
+            data.firstname = $scope.form.firstname;
+            data.lastname = $scope.form.lastname;
+          } else {
+            //If Id is present, it's edit operation - PUT operation
+            method = "PUT";
+            url = SERVER_URL;
+
+            data.id = $scope.form.id;
+            data.firstname = $scope.form.firstname;
+            data.lastname = $scope.form.lastname;
+          }
+          $http({
+            method: method,
+            url: url,
+            data: angular.toJson(data),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }).then(_success, _error);
+        };
+        //HTTP DELETE- delete person by id
+        $scope.remove = function (person) {
+
+          $http({
+            method: 'DELETE',
+            url: SERVER_URL+'?id='+person.id
+          }).then(_success, _error);
+        };
+        //In case of edit Persons, populate form with person data
+        $scope.edit = function (person) {
+          $scope.form.firstname = person.firstname;
+          $scope.form.lastname = person.lastname;
+          $scope.form.id = person.id;
+        };
+          /* Private Methods */
+        //HTTP GET- get all Persons collection
+        function _refreshPageData() {
+          $http({
+            method: 'GET',
+            url: SERVER_URL
+          }).then(function successCallback(response) {
+            $scope.Persons = response.data;
+          }, function errorCallback(response) {
+            console.log(response.statusText);
+          });
+        }
+        function _success(response) {
+          _refreshPageData();
+          _clearForm()
+        }
+        function _error(response) {
+          alert(response.data.message || response.statusText);
+        }
+        //Clear the form
+        function _clearForm() {
+          $scope.form.firstname = "";
+          $scope.form.lastname = "";
+          $scope.form.id = -1;
+        }
+      });
+    </script>
+</head>
+<body ng-app="PersonManagement" ng-controller="PersonManagementController">
+
+<div class="divTable blueTable">
+    <h3>Spring Boot Person Service</h3>
+    <h4>Enter Person:</h4>
+    <form ng-submit="update()">
+        <div class="divTableRow">
+            <div class="divTableCell">First Name:</div>
+            <div class="divTableCell"><input type="text" placeholder="First Name" ng-model="form.firstname" size="60"/></div>
+        </div>
+        <div class="divTableRow">
+            <div class="divTableCell">Last Name:</div>
+            <div class="divTableCell"><input type="text" placeholder="Last Name" ng-model="form.lastname" size="60"/></div>
+        </div>
+
+        <input type="submit" value="Save"/>
+    </form>
+    <div class="divTable blueTable">
+        <div class="divTableHeading">
+            <div  class="divTableHead">Person First Name</div>
+            <div  class="divTableHead">Person Last Name</div>
+            <div  class="divTableHead">Action</div>
+        </div>
+        <div class="divTableRow" ng-repeat="person in Persons">
+            <div class="divTableCell">{{ person.firstname }}</div>
+            <div class="divTableCell">{{ person.lastname }}</div>
+            <div class="divTableCell"><a ng-click="edit( person )" class="myButton">Edit</a> <a ng-click="remove( person )" class="myButton">Remove</a></div>
+        </div>
+    </div>
+</body>
+</html>
